@@ -18,7 +18,7 @@ module.exports.login = async (req, res, next) => {
 };
 
 module.exports.register = async (req, res, next) => {
-    console.log(req.body)
+  console.log(req.body);
   try {
     const { username, email, password } = req.body;
     const usernameCheck = await User.findOne({ username });
@@ -35,6 +35,55 @@ module.exports.register = async (req, res, next) => {
     });
     delete user.password;
     return res.json({ status: true, user });
+  } catch (ex) {
+    next(ex);
+  }
+};
+
+module.exports.setProfile = async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+    const profileImage = req.body.image;
+    const userData = await User.findByIdAndUpdate(
+      userId,
+      {
+        isProfileImageSet: true,
+        profileImage,
+      },
+      { new: true }
+    );
+    return res.json({
+      isSet: userData.isProfileImageSet,
+      image: userData.profileImage,
+    });
+  } catch (ex) {
+    next(ex);
+  }
+};
+
+//.................
+
+module.exports.getAllUsers = async (req, res, next) => {
+  try {
+    //  it get onlu outher user id not include our id....
+    const users = await User.find({ _id: { $ne: req.params.id } }).select([
+      "email",
+      "username",
+      "profileImage",
+      "_id",
+    ]);
+    return res.json(users);
+  } catch (ex) {
+    next(ex);
+  }
+};
+
+// logout function .....
+module.exports.logOut = (req, res, next) => {
+  try {
+    if (!req.params.id) return res.json({ msg: "User id is required " });
+    onlineUsers.delete(req.params.id);
+    return res.status(200).send();
   } catch (ex) {
     next(ex);
   }
